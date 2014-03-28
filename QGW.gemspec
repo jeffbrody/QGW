@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = QGW::VERSION
   spec.authors       = ["Jeff Brody"]
   spec.email         = ["jeff@bluecrowconsulting.com"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.summary       = %q{Mixin to format queries for Quantum XML requester}
+  spec.description   = %q{Mixin to format queries for Quantum XML requester}
   spec.homepage      = ""
   spec.license       = "MIT"
 
