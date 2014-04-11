@@ -1,12 +1,13 @@
-require "QGW/version"
-require 'xml-fu'
+require 'ox'
+require 'rest-client'
 
 module QGW
   def initialize
 	   @key = "default"
 	   @username = "default"
-	   @req = "default"
-   end
+	   @req = Ox::Element.new("Request")
+     @req << "default"
+  end
 
   def set_login_info( username, key )
   	@username = username
@@ -17,9 +18,41 @@ module QGW
   	VERSION
   end
 
-  def build_base_request
-  	auth = { 'GatewayLogin' => @username, 'GatewayKey' => @key}
-  	request = {'QGWRequest'=> {'Authentication'=> auth, 'Request'=> @req}}
-  	XmlFu.xml(request)
+  def build_XML_request
+    req = Ox::Element.new("QGWRequest")
+    auth = build_Auth_element
+    req << auth
+    req << @req
+  	xml = Ox.dump(req)
   end
+
+  def submit(xml)
+    url = 'https://secure.quantumgateway.com/cgi/xml_requester.php'
+
+    result = RestClient.post url, xml
+    Ox.parse(result)
+  end
+
+  def build_Auth_element
+    auth = Ox::Element.new("Authentication")
+    login = make_node("GatewayLogin", @username)
+    auth << login
+    key = make_node("GatewayKey", @key)
+    auth << key
+  end
+
+  def clear_request
+    @req.nodes.clear
+    @req
+  end
+
+  def make_node(node_value, node_text)
+    node = Ox::Element.new(node_value)
+    node << node_text
+  end
+
 end
+
+require "QGW/version"
+require 'QGW/credit_debit_transactions'
+require 'QGW/search_transactions'
