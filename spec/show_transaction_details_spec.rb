@@ -12,7 +12,7 @@ describe "Build Find Transaction Details XML" do
 	it "builds a ShowTransactionDetails request for specific trans ID" do
 		req = subject.build_show_transaction_details("ID")
 		req.value.should eq "Request"
-		req.nodes.length.should eq 8
+		req.nodes.length.should eq 2
 	end
 
 		

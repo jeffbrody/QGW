@@ -1,0 +1,613 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"tr",
+				"transaction_id"
+			],
+			[
+				"res",
+				"rest_client"
+			],
+			[
+				"sub",
+				"subject"
+			],
+			[
+				"node",
+				"node_text"
+			],
+			[
+				"do",
+				"dob	Insert do |variable| … end"
+			],
+			[
+				"customer",
+				"customer_id"
+			],
+			[
+				"clic",
+				"click_button"
+			],
+			[
+				"st",
+				"stripe_token"
+			],
+			[
+				"id",
+				"ids"
+			],
+			[
+				"uni",
+				"unit_price"
+			],
+			[
+				"cli",
+				"click_link"
+			],
+			[
+				"click_",
+				"click_button"
+			],
+			[
+				"date",
+				"date_available"
+			],
+			[
+				"fil",
+				"fill_in"
+			],
+			[
+				"be",
+				"before_filter"
+			],
+			[
+				"product",
+				"product_name"
+			],
+			[
+				"should",
+				"should_date"
+			],
+			[
+				"s",
+				"scenario"
+			],
+			[
+				"ssh",
+				"ssh_options"
+			],
+			[
+				"is",
+				"is_admin"
+			],
+			[
+				"si",
+				"signed"
+			],
+			[
+				"us",
+				"username"
+			],
+			[
+				"pa",
+				"password"
+			],
+			[
+				"sc",
+				"scenario"
+			],
+			[
+				"W",
+				"world"
+			],
+			[
+				"exchange",
+				"the_exchange_path"
+			],
+			[
+				"pro",
+				"product"
+			],
+			[
+				"prod",
+				"product_name"
+			],
+			[
+				"cas",
+				"case_sensitive"
+			],
+			[
+				"la",
+				"last_name"
+			],
+			[
+				"fi",
+				"first_name"
+			],
+			[
+				"i",
+				"italic"
+			],
+			[
+				"fo",
+				"font-style"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"contents": "#require 'httparty'\nrequire 'rest_client'\nrequire 'pp'\nrequire 'xml-fu'\n\nclass XML_Requester\n	#include HTTParty\n\n	#URL = \"https://secure.quantumgateway.com/cgi/xml_requester.php\"\n	URL = \"http://localhost:4567\"\n	REQ = <<XML \n<QGWRequest> \n	<Authentication>\n		<GatewayLogin>jeffbrody</GatewayLogin>\n		<GatewayKey>d25rnfT7RMvU14T</GatewayKey>\n	</Authentication>\n	<Request>\n		<RequestType>ShowVaultDetails</RequestType>\n		<CustomerID>4041000000</CustomerID>\n	</Request>\n</QGWRequest>xml\n	\nXML\n\n	Auth = { 'GatewayLogin' => 'jeffbrody', 'GatewayKey' => 'd25rnfT7RMvU14T'}\n	Req = {'RequestType'=> 'ShowVaultDetails', 'CustomerID'=> '12345'}\n\n	#format :xml\n\n	def show\n		puts \"URL: #{URL} REQ: #{makeXML}\" \n	end\n\n	def makeXML\n		req = {'QGWRequest'=> {'Authentication'=> Auth, 'Request'=> Req}}\n		XmlFu.xml(req)\n	end\n\n	def post \n		resp = RestClient.post URL, makeXML, content_type: \"text/xml\"	\n		puts resp	\n	end\nend\n\nxml = XML_Requester.new() \nxml.show\nxml.post\n\n\n",
+			"file": "/home/jeff/projects/quantum/spike/qxmltest.rb",
+			"file_size": 951,
+			"file_write_time": 1394132479000000,
+			"settings":
+			{
+				"buffer_size": 954,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "require 'QGW'\n\ndescribe \"Build overall Quantum request XML\" do\n	let(:quantumClass) {\n		Class.new do\n			include QGW\n		end\n	}\n\n	subject { quantumClass.new }\n\n	its (:mod_version) { should eq '0.0.1'}\n\n	it \"Should let me set the Username & Key\" do\n		subject.set_login_info( 'username', 'key').should eq \"key\"\n	end\n\n	it \"Should build an Auth element\" do\n		username = \"UserName\"\n		key = \"Key\"\n		subject.set_login_info( username, key)\n		auth = subject.build_Auth_element\n		auth.value.should eq \"Authentication\"\n		auth.nodes.length.should eq 2\n		auth.nodes[0].value.should eq \"GatewayLogin\"\n		auth.nodes[0].nodes[0].should eq username\n		auth.nodes[1].value.should eq \"GatewayKey\"\n		auth.nodes[1].nodes[0].should eq key\n	end\n\n	its (:build_XML_request) { \n		should =~ /<QGWRequest>/ \n		should =~ /<Authentication>/ \n		should =~ /<GatewayLogin>default<\\/GatewayLogin>/ \n		should =~ /<GatewayKey>default<\\/GatewayKey>/ 				\n		should =~ /<\\/Authentication>/ \n		should =~ /<Request>default<\\/Request>/		\n		should =~ /<\\/QGWRequest>/ \n	}\n\n	it \"Should be able to clear the last request\" do\n		req = subject.clear_request\n		req.value.should eq \"Request\"\n		req.nodes.length.should eq 0\n	end\n\n	it \"Should be able to create standalone nodes with text\" do\n		node = subject.make_node(\"Node value\", \"Node text\")\n		node.value.should eq \"Node value\"\n		node.nodes[0].should eq \"Node text\"\n	end\nend\n\ndescribe \"Send request to Quantum Gateway\" do\n	let(:quantumClass) {\n		Class.new do\n			include QGW\n		end\n	}\n\n	subject { quantumClass.new }	\n\n	it \"Should return the response object after submitting request\" do\n		RestClient = double(\"RestClient\")\n		xml = subject.build_XML_request\n		resp = %q{<ResponseSummary>\n			<RequestType>ShowTransactionDetail</RequestType>\n			<Status>Error</Status>\n			<StatusDescription>Transaction not found</StatusDescription>\n			<ResultCount>0</ResultCount>\n			<TimeStamp>8/20/2003 8:34:28 AM</TimeStamp>\n			</ResponseSummary>\n		}\n		respOx = Ox.parse(resp)\n		RestClient.should_receive(:post).with(\n			\"https://secure.quantumgateway.com/cgi/xml_requester.php\", \"#{xml}\").\n			and_return(resp)\n\n		retval = subject.submit(xml)\n		retval.should == respOx\n	end\n\n	it \"Should deal with errors connecting to site\" do\n		pending\n	end\nend\n",
+			"file": "spec/QGW_spec.rb",
+			"file_size": 2223,
+			"file_write_time": 1397250648000000,
+			"settings":
+			{
+				"buffer_size": 2222,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lib/QGW.rb",
+			"settings":
+			{
+				"buffer_size": 1154,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 348.0,
+		"selected_items":
+		[
+			[
+				"",
+				"Snippet: Lorem ipsum"
+			],
+			[
+				"Snippet: n",
+				"Snippet: bs3-navbar-links"
+			],
+			[
+				"Snippet: ",
+				"Snippet: bs3-navbar-fixed-top"
+			],
+			[
+				"Package Control: ",
+				"Package Control: List Packages"
+			]
+		],
+		"width": 575.0
+	},
+	"console":
+	{
+		"height": 139.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/home/jeff/projects/quantum/QGW/spec/lib/search_transactions_spec.rb",
+		"/home/jeff/projects/quantum/QGW/spec/QGW_spec.rb",
+		"/home/jeff/projects/quantum/QGW/spec/lib/credit_debit_transactions_spec.rb",
+		"/home/jeff/projects/quantum/QGW/lib/QGW/credit_debit_transactions.rb",
+		"/home/jeff/projects/quantum/QGW/lib/QGW/show_transaction_details.rb",
+		"/home/jeff/projects/quantum/QGW/lib/QGW.rb",
+		"/home/jeff/projects/quantum/QGW/Gemfile",
+		"/home/jeff/projects/quantum/QGW/spec/show_transaction_details_spec.rb",
+		"/home/jeff/projects/quantum/QGW/spec/find_specific_transaction_spec.rb",
+		"/home/jeff/projects/quantum/QGW/Guardfile",
+		"/home/jeff/.rvm/gems/ruby-2.0.0-p247/gems/ox-2.1.1/lib/ox/node.rb",
+		"/home/jeff/.rvm/gems/ruby-2.0.0-p247/gems/ox-2.1.1/lib/ox/element.rb",
+		"/home/jeff/.rvm/gems/ruby-2.0.0-p247/gems/ox-2.1.1/lib/ox.rb",
+		"/home/jeff/projects/quantum/QGW/lib/QGW/search_transactions.rb",
+		"/home/jeff/projects/quantum/QGW/spec/search_transactions_spec.rb",
+		"/home/jeff/projects/quantum/spike/qxmltest.rb",
+		"/home/jeff/projects/cs_auth/Gemfile",
+		"/home/jeff/projects/handplow/Gemfile",
+		"/home/jeff/projects/quantum/QGW/QGW.gemspec",
+		"/home/jeff/projects/mongo/sodibee/Gemfile",
+		"/home/jeff/projects/quantum/spec/build_outer_request_spec.rb",
+		"/home/jeff/projects/quantum/lib/QGWModule.rb",
+		"/home/jeff/projects/cs_auth/auth_service.rb",
+		"/home/jeff/projects/quantum/qxmltest.rb",
+		"/home/jeff/projects/quantum/curl.sh",
+		"/home/jeff/projects/dyn_pages/Gemfile",
+		"/home/jeff/projects/handplow/Guardfile",
+		"/home/jeff/projects/dyn_pages/Guardfile",
+		"/home/jeff/projects/handplow/config/application.yml",
+		"/home/jeff/projects/handplow/app/models/user.rb",
+		"/home/jeff/projects/handplow/db/seeds.rb",
+		"/home/jeff/projects/handplow/spec/models/user_spec.rb",
+		"/home/jeff/projects/handplow/spec/features/users_spec.rb",
+		"/home/jeff/projects/handplow/app/models/plan.rb",
+		"/home/jeff/projects/handplow/app/controllers/static_pages_controller.rb",
+		"/home/jeff/projects/handplow/app/views/static_pages/test.html.erb",
+		"/home/jeff/projects/handplow/config/routes.rb",
+		"/home/jeff/projects/handplow/app/views/devise/registrations/new.html.erb",
+		"/home/jeff/projects/handplow/app/views/layouts/application.html.erb",
+		"/home/jeff/projects/handplow/app/views/koudoku/subscriptions/_social_proof.html.erb",
+		"/home/jeff/projects/handplow/app/assets/javascripts/registrations.js",
+		"/home/jeff/projects/handplow/.gitignore",
+		"/home/jeff/projects/handplow/app/views/devise/shared/_links.erb",
+		"/home/jeff/projects/handplow/app/views/products/index.html.erb",
+		"/home/jeff/projects/handplow/app/views/users_admin/edit.html.erb",
+		"/home/jeff/projects/handplow/spec/support/features.rb",
+		"/home/jeff/projects/handplow/spec/features/editing_product_spec.rb",
+		"/home/jeff/projects/handplow/spec/features/admin_spec.rb",
+		"/home/jeff/projects/handplow/spec/features/deleting_product_spec.rb",
+		"/home/jeff/projects/handplow/spec/features/creating_products_spec.rb",
+		"/home/jeff/projects/handplow/spec/features/viewing_product_spec.rb",
+		"/home/jeff/projects/handplow/app/views/layouts/_navigation.html.erb",
+		"/home/jeff/projects/handplow/app/assets/stylesheets/handplow.css.scss",
+		"/home/jeff/projects/handplow/app/views/users_admin/index.html.erb",
+		"/home/jeff/projects/handplow/app/controllers/users_admin_controller.rb",
+		"/home/jeff/projects/handplow/app/controllers/products_controller.rb",
+		"/home/jeff/projects/handplow/app/views/products/_product_form.html.erb",
+		"/home/jeff/projects/handplow/app/views/users_admin/show.html.erb",
+		"/home/jeff/projects/handplow/app/views/devise/registrations/edit.html.erb",
+		"/home/jeff/projects/handplow/app/assets/javascripts/jquery.readyselector.js",
+		"/home/jeff/projects/handplow/app/assets/javascripts/jquery.externalscript.js",
+		"/home/jeff/projects/handplow/spec/features/home_page_spec.rb",
+		"/home/jeff/projects/handplow/app/models/role.rb",
+		"/home/jeff/projects/handplow/config/initializers/stripe.rb",
+		"/home/jeff/projects/handplow/spec/features/next step notes",
+		"/home/jeff/projects/handplow/app/models/product.rb",
+		"/home/jeff/projects/handplow/spec/models/product_spec.rb",
+		"/home/jeff/projects/handplow/spec/factories/users.rb",
+		"/home/jeff/projects/handplow/virtual_data/access for Ann",
+		"/home/jeff/projects/handplow/app/models/ability.rb",
+		"/home/jeff/projects/handplow/spec/controllers/products_controller_spec.rb",
+		"/home/jeff/projects/handplow/app/views/products/show.html.erb",
+		"/home/jeff/projects/handplow/config/locales/devise.en.yml",
+		"/home/jeff/projects/handplow/app/controllers/users/registrations_controller.rb",
+		"/home/jeff/projects/handplow/app/controllers/users/users_controller.rb",
+		"/home/jeff/projects/handplow/config/initializers/devise.rb",
+		"/home/jeff/projects/handplow/app/views/devise/passwords/new.html.erb",
+		"/home/jeff/projects/handplow/app/views/devise/passwords/edit.html.erb",
+		"/home/jeff/projects/handplow/app/views/devise/confirmations/new.html.erb",
+		"/home/jeff/projects/handplow/app/views/devise/unlocks/new.html.erb",
+		"/home/jeff/projects/handplow/app/views/devise/sessions/new.html.erb",
+		"/home/jeff/projects/handplow/lib/templates/erb/scaffold/_form.html.erb",
+		"/home/jeff/projects/handplow/app/views/static_pages/about_us.html.erb",
+		"/home/jeff/projects/handplow/spec/factories/products.rb",
+		"/home/jeff/projects/handplow/spec/features/products_controller_spec.rb",
+		"/home/jeff/projects/handplow/app/views/products/edit.html.erb",
+		"/home/jeff/projects/handplow/app/assets/javascripts/application.js",
+		"/home/jeff/projects/handplow/app/views/products/new.html.erb",
+		"/home/jeff/projects/handplow/app/assets/stylesheets/application.css.scss",
+		"/home/jeff/projects/handplow/app/assets/javascripts/products.js.coffee",
+		"/home/jeff/projects/handplow/config/deploy.rb",
+		"/home/jeff/projects/handplow/virtual_data/puppet/modules/nginx/manifests/init.pp",
+		"/home/jeff/projects/handplow/virtual_data/puppet/modules/nginx/files/passenger.list",
+		"/home/jeff/projects/handplow/virtual_data/puppet/modules/nginx/files/handandplow.conf",
+		"/home/jeff/projects/handplow/vbox/Vagrantfile",
+		"/home/jeff/projects/handplow/virtual_data/puppet/modules/passenger/manifests/init.pp",
+		"/home/jeff/projects/handplow/virtual_data/puppet/modules/handandplow/manifests/init.pp",
+		"/home/jeff/projects/handplow/virtual_data/puppet/manifests/nodes.pp",
+		"/home/jeff/projects/handplow/virtual_data/puppet/modules/mongodb/manifests/init.pp",
+		"/home/jeff/projects/handplow/app/helpers/application_helper.rb",
+		"/home/jeff/projects/handplow/config/initializers/rolify.rb",
+		"/home/jeff/projects/handplow/virtual_data/manifests/modules/nginx/manifests/init.pp",
+		"/home/jeff/projects/handplow/virtual_data/manifests/site.pp",
+		"/home/jeff/projects/handplow/virtual_data/manifests/nodes.pp",
+		"/home/jeff/projects/handplow/data/site.pp",
+		"/usr/share/applications/sublime.desktop",
+		"/home/jeff/projects/handplow/spec/support/devise.rb",
+		"/home/jeff/projects/handplow/features/static_pages/static_pages.feature",
+		"/home/jeff/projects/handplow/spec/models/user_spec.rb.old",
+		"/home/jeff/projects/handplow/app/models/user.rb.old",
+		"/home/jeff/projects/handplow/spec/controllers/static_pages_controller_spec.rb",
+		"/home/jeff/projects/handplow/app/views/products/delete.html.erb",
+		"/home/jeff/projects/Bootstrap/bootstrap/less/variables.less",
+		"/home/jeff/projects/Bootstrap/bootstrap/dist/css/bootstrap.css",
+		"/home/jeff/projects/handplow/Capfile",
+		"/home/jeff/projects/handplow/.bundle/config",
+		"/home/jeff/projects/handplow/features/step_definitions/exchange_steps.rb",
+		"/home/jeff/projects/handplow/features/exchange/exchange_page.feature",
+		"/home/jeff/projects/handandplow/app/assets/stylesheets/layout.css.scss",
+		"/home/jeff/projects/handandplow/app/assets/stylesheets/products.css.scss",
+		"/home/jeff/projects/handandplow/app/assets/stylesheets/static_pages.css.scss",
+		"/home/jeff/projects/handplow/features/step_definitions/handplow_steps.rb",
+		"/home/jeff/projects/handplow/app/views/layouts/_messages.html.erb",
+		"/home/jeff/projects/handplow/spec/spec_helper.rb",
+		"/home/jeff/projects/handplow/config/initializers/simple_form.rb",
+		"/home/jeff/projects/handplow/config/initializers/simple_form_bootstrap.rb",
+		"/home/jeff/projects/handplow/features/exchange/exchange_page_features.txt",
+		"/home/jeff/projects/handplow/config/initializers/wrap_parameters.rb"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"1",
+			"0",
+			"[0]",
+			"auth",
+			";\n“",
+			";\n$xml .= ",
+			"\n$xml .= “ ",
+			" %></button>",
+			"<button type=\"button\" class=\"btn btn-default\">",
+			"()",
+			".val()",
+			"name",
+			"product",
+			"Sessions",
+			"(f.button.*)%>",
+			"Qty",
+			"location",
+			"Location",
+			"\") ",
+			"admin",
+			"<%= link_to",
+			"br /",
+			"[0-9][0-9]\\.",
+			"/[0-9][0-9]\\./",
+			"name",
+			"je",
+			"devise",
+			"b94a48",
+			"danger",
+			"alert",
+			"list",
+			"je",
+			"}",
+			"#{Date.",
+			"ay",
+			"Date",
+			"@yesterday",
+			"@today",
+			"je",
+			"Project",
+			"13",
+			"s/",
+			"get",
+			"qty",
+			"name",
+			"yesterday",
+			"today",
+			"lightness",
+			"4.0.0",
+			"Seventy.com"
+		],
+		"highlight": true,
+		"in_selection": true,
+		"preserve_case": false,
+		"regex": true,
+		"replace_history":
+		[
+			"2",
+			"1",
+			"[1]",
+			"req",
+			"\"",
+			"+",
+			"",
+			", :class => \"btn btn-default\" %></p>",
+			"<p>",
+			"",
+			"username",
+			"user",
+			"Registrations",
+			"\\1, :class => \"btn btn-default\" %>",
+			"Quantity",
+			"zipcode",
+			"Zip Code",
+			"<button type=\"button\" class=\"btn btn-default\"><%= link_to",
+			"/button",
+			"",
+			"username",
+			"du",
+			"",
+			"ay}",
+			"#{Date",
+			"Date.yesterday",
+			"Date.today",
+			"du",
+			"Product",
+			"2013",
+			"s#",
+			"match '/about_us', to: ",
+			"quantity_available",
+			"product_name",
+			"9/10/13",
+			"9/11/13",
+			"3.2.13",
+			"HandandPlow.com"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "/home/jeff/projects/quantum/spike/qxmltest.rb",
+					"settings":
+					{
+						"buffer_size": 954,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								882,
+								882
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Ruby/Ruby.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 306.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "spec/QGW_spec.rb",
+					"settings":
+					{
+						"buffer_size": 2222,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1662,
+								1662
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Ruby/Ruby.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 408.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "lib/QGW.rb",
+					"settings":
+					{
+						"buffer_size": 1154,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								603,
+								603
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Ruby/Ruby.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 33.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 112.0
+	},
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 259.0,
+	"status_bar_visible": true
+}

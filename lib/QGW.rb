@@ -29,8 +29,10 @@ module QGW
   def submit(xml)
     url = 'https://secure.quantumgateway.com/cgi/xml_requester.php'
 
-    result = RestClient.post url, xml
+    result = RestClient.post url, xml, content_type: "text/xml"
+    print result
     Ox.parse(result)
+
   end
 
   def build_Auth_element
@@ -56,3 +58,4 @@ end
 require "QGW/version"
 require 'QGW/credit_debit_transactions'
 require 'QGW/search_transactions'
+require 'QGW/show_transaction_details'
